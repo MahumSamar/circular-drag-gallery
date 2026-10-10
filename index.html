@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Under The Radar — Motion Designers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e3e3e5;
+    --ink: #141414;
+    --muted: #8c8c90;
+    --display: min(9vw, 12.6vh);
+    --pad-x: 3.5vw;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .radar {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 420px;
+    overflow: hidden;
+    background: var(--bg);
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .radar.is-dragging { cursor: grabbing; }
+
+  /* ---------- wheel ---------- */
+  .wheel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    will-change: transform;
+  }
+  .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    background: #cfcfd2;
+    backface-visibility: hidden;
+  }
+  .card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  /* ---------- brand + counter ---------- */
+  .brand {
+    position: absolute;
+    left: var(--pad-x);
+    top: 17px;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .brand__row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 20px;
+  }
+  .brand__mark {
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+  .brand__mark::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  .counter {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 7px 0 0 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .counter__line {
+    width: 18px;
+    height: 1px;
+    background: #a9a9ad;
+  }
+  .counter__total { color: var(--muted); font-weight: 600; }
+
+  /* ---------- display type ---------- */
+  .display {
+    position: absolute;
+    z-index: 2;
+    font-size: var(--display);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.045em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .display span { display: block; }
+  .display--top {
+    top: 16px;
+    right: calc(var(--pad-x) + 0.9vw);
+    text-align: right;
+  }
+  .display--bottom {
+    left: var(--pad-x);
+    bottom: 20px;
+    text-align: left;
+  }
+
+  /* ---------- tablet ---------- */
+  @media (max-width: 1024px) {
+    :root { --display: min(10.5vw, 11vh); --pad-x: 28px; }
+    .display--top { right: 28px; }
+  }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 640px) {
+    :root { --display: 15.5vw; --pad-x: 18px; }
+    .brand { top: 16px; }
+    .display--top { top: 58px; right: 18px; }
+    .display--bottom { bottom: 22px; }
+  }
+
+  @media (max-height: 520px) and (orientation: landscape) {
+    :root { --display: min(8vw, 15vh); }
+    .display--top { top: 10px; }
+    .display--bottom { bottom: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="radar" id="radar" aria-roledescription="carousel" aria-label="Motion designers under the radar" tabindex="0">
+
+  <div class="brand">
+    <div class="brand__row"><span class="brand__mark"></span>GetLayers</div>
+    <div class="counter" aria-live="polite">
+      <span id="current">03</span>
+      <span class="counter__line"></span>
+      <span class="counter__total">08</span>
+    </div>
+  </div>
+
+  <div class="wheel" id="wheel"></div>
+
+  <h1 class="display display--top"><span>Under</span><span>The</span><span>Radar</span></h1>
+  <h2 class="display display--bottom"><span>Motion</span><span>Designers</span></h2>
+
+</section>
+
+<script>
+(() => {
+  const BASE = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/';
+  const IMAGES = [
+    'hf_20261010_122720_6f2d0387-c7a9-4cb1-8e2d-49c519018993.png',
+    'hf_20261010_122719_59133dcf-31f3-4e78-89f6-fc81535cce7e.png',
+    'hf_20261010_122719_1cb30a51-7763-4dd8-a5e1-7e3ab611a768.png',
+    'hf_20261010_122720_b7989380-3834-4ddb-91d8-4c686462f357.png',
+    'hf_20261010_122719_e68cee48-273d-4fb1-8b05-4ec84582368d.png',
+    'hf_20261010_122718_b8e4c319-3de2-4a07-90df-f3e0ee53c2aa.png',
+    'hf_20261010_122720_d300f3db-8ebd-4066-b45a-278833c083db.png',
+    'hf_20261010_122719_33e15aa3-d23b-49b0-9fa5-d09662c744fd.png'
+  ].map(f => BASE + f);
+
+  const SLOTS = 24;                 // 8 images x 3 around the full circle
+  const STEP = 360 / SLOTS;         // 15deg between cards
+  const FRICTION = 4.2;             // inertia decay (1/s)
+
+  const stage = document.getElementById('radar');
+  const wheel = document.getElementById('wheel');
+  const current = document.getElementById('current');
+
+  const cards = [];
+  for (let i = 0; i < SLOTS; i++) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const img = new Image();
+    img.src = IMAGES[i % IMAGES.length];
+    img.alt = '';
+    img.draggable = false;
+    img.decoding = 'async';
+    card.appendChild(img);
+    wheel.appendChild(card);
+    cards.push(card);
+  }
+
+  let radius = 938;
+  let angle = -2 * STEP + 1;        // opens on card 03, as in the reference
+  let velocity = 0;                 // deg / s
+  let dragging = false;
+  let lastX = 0, lastT = 0;
+  let shown = -1;
+
+  function layout() {
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const mobile = vw <= 640;
+    // reference frame: 1206 x 864, card 205 x 290, radius 938, arc top centre at y = 412
+    const s = mobile ? (vw * 0.44) / 205 : Math.min(vw / 1206, vh / 864);
+    const w = 205 * s, h = 290 * s;
+    radius = 938 * s;
+    const cy = (mobile ? vh * 0.5 : vh * 0.477) + radius;
+    wheel.style.left = vw / 2 + 'px';
+    wheel.style.top = cy + 'px';
+    cards.forEach((card, i) => {
+      card.style.width = w + 'px';
+      card.style.height = h + 'px';
+      card.style.margin = (-h / 2) + 'px 0 0 ' + (-w / 2) + 'px';
+      card.style.borderRadius = (18 * s) + 'px';
+      card.style.transform = 'rotate(' + (i * STEP) + 'deg) translate3d(0,' + (-radius) + 'px,0)';
+    });
+    render();
+  }
+
+  function render() {
+    wheel.style.transform = 'rotate(' + angle + 'deg)';
+    const slot = ((Math.round(-angle / STEP) % SLOTS) + SLOTS) % SLOTS;
+    const idx = slot % IMAGES.length;
+    if (idx !== shown) {
+      shown = idx;
+      current.textContent = String(idx + 1).padStart(2, '0');
+    }
+  }
+
+  const toDeg = px => (px / radius) * (180 / Math.PI);
+
+  // ---- drag ----
+  stage.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true;
+    velocity = 0;
+    lastX = e.clientX;
+    lastT = performance.now();
+    stage.classList.add('is-dragging');
+    stage.setPointerCapture(e.pointerId);
+  });
+
+  stage.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const now = performance.now();
+    const d = toDeg(e.clientX - lastX);
+    const dt = Math.max(now - lastT, 1) / 1000;
+    angle += d;
+    velocity = velocity * 0.4 + (d / dt) * 0.6;
+    lastX = e.clientX;
+    lastT = now;
+  });
+
+  function release(e) {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+    if (performance.now() - lastT > 80) velocity = 0;   // held still before letting go
+    velocity = Math.max(-320, Math.min(320, velocity));
+    try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
+  }
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+
+  // ---- wheel / trackpad ----
+  stage.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    velocity -= toDeg(delta) * 6;
+    velocity = Math.max(-320, Math.min(320, velocity));
+  }, { passive: false });
+
+  // ---- keyboard ----
+  stage.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') velocity = -STEP * FRICTION;
+    else if (e.key === 'ArrowLeft') velocity = STEP * FRICTION;
+  });
+
+  // ---- loop ----
+  let prev = performance.now();
+  function tick(now) {
+    const dt = Math.min((now - prev) / 1000, 0.05);
+    prev = now;
+    if (!dragging && velocity !== 0) {
+      angle += velocity * dt;
+      velocity *= Math.exp(-FRICTION * dt);
+      if (Math.abs(velocity) < 0.02) velocity = 0;
+    }
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', layout);
+  layout();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
